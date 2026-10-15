@@ -4,7 +4,7 @@ A cosmic discovery game: combine ingredients to turn a first spark into stars, a
 
 Play: https://josephrabuffetti.github.io/first-spark/
 
-## v6 · See things form
+## v7 · See things form
 
 Scene changes now use a persistent formation model rather than switching between a seed, cloud, star, and planet renderer. Cold gas contracts into a visibly warming protostar, fusion gradually reveals a stellar surface, and irregular disk fragments converge into a separate rocky body. The star remains visible as the camera follows the new world. Atmosphere, ocean material, and microbial coastal color interpolate on the same globe.
 
@@ -40,3 +40,11 @@ Click two ingredients and Merge, or drag one field orb into another. Ingredients
 GitHub Pages serves `main`. Publish HTML, CSS, JavaScript, `icon.svg`, and `assets/` together. Assets are hosted locally to the site. Progress is stored per browser and origin; export it before changing origin or clearing browser data. The local Node server is only a convenience.
 
 Recipes are simplified game abstractions, not laboratory instructions or a proven pathway to the origin of life. [ROADMAP.md](ROADMAP.md) records the requested next patch; years, random planetary events, species evolution, and eruptions are not simulated in v5.
+
+## Living-world update
+
+After creating a planet, use **Watch world** to enter exploration, then advance 1,000 years or run time. Five event types change environmental values; four microbial lineages appear when discoveries and conditions allow. Years and history are saved, and running time always starts paused on reload. Oxygenation requires cyanobacteria. Timelines are fictional and compressed.
+
+**Watch formation** replays the last material transformation. If reduced motion is active, the control says **Enable animations** and changes that setting only when clicked. Major formation sequences last 4–6 seconds, with moving gas streams, separate cloud wisps, and orbiting fragments.
+
+Run `npm run test:world` for timeline, events, lineage, persistence, replay, and menu-pause browser checks. See [V7_REVIEW.md](V7_REVIEW.md) for this patch's review.

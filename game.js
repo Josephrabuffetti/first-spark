@@ -4,9 +4,9 @@ const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
 const byId=Object.fromEntries(ITEMS.map(x=>[x.id,x]));
 const key='first-spark-v1', starters=ITEMS.slice(0,4).map(x=>x.id);
 const colors={Cosmos:'#e9c58b',World:'#9abff2',Life:'#a5e2be'};
-const defaultState=()=>({version:1,discovered:[...starters],name:'Pale Blue',sound:false,reduced:matchMedia('(prefers-reduced-motion: reduce)').matches,completed:false});
+const defaultState=()=>({version:1,discovered:[...starters],name:'Pale Blue',sound:false,reduced:matchMedia('(prefers-reduced-motion: reduce)').matches,completed:false,world:WorldHistory.fresh()});
 let state=defaultState(), storageAvailable=true;
-function validate(s){if(!s||s.version!==1||!Array.isArray(s.discovered)||s.discovered.some(x=>!byId[x])||!starters.every(x=>s.discovered.includes(x)))throw Error('This is not a valid First Spark save.');const found=new Set(starters);let changed=true;while(changed){changed=false;for(const [a,b,c] of RECIPES)if(s.discovered.includes(c)&&found.has(a)&&found.has(b)&&!found.has(c)){found.add(c);changed=true;}}if(s.discovered.some(x=>!found.has(x)))throw Error('This save contains discoveries without their ingredients.');return {version:1,discovered:[...new Set(s.discovered)],name:typeof s.name==='string'?s.name.slice(0,30).trim()||'Pale Blue':'Pale Blue',sound:!!s.sound,reduced:!!s.reduced,completed:!!s.completed&&s.discovered.includes('biosphere')};}
+function validate(s){if(!s||s.version!==1||!Array.isArray(s.discovered)||s.discovered.some(x=>!byId[x])||!starters.every(x=>s.discovered.includes(x)))throw Error('This is not a valid First Spark save.');const found=new Set(starters);let changed=true;while(changed){changed=false;for(const [a,b,c] of RECIPES)if(s.discovered.includes(c)&&found.has(a)&&found.has(b)&&!found.has(c)){found.add(c);changed=true;}}if(s.discovered.some(x=>!found.has(x)))throw Error('This save contains discoveries without their ingredients.');return {version:1,discovered:[...new Set(s.discovered)],name:typeof s.name==='string'?s.name.slice(0,30).trim()||'Pale Blue':'Pale Blue',sound:!!s.sound,reduced:!!s.reduced,completed:!!s.completed&&s.discovered.includes('biosphere'),world:WorldHistory.clean(s.world)};}
 try{const saved=localStorage.getItem(key);if(saved)state=validate(JSON.parse(saved));}catch(e){storageAvailable=false;}
 let selected=[null,null],filter='All',fresh=null,view='universe',hintTarget=null,hintLevel=0,audioContext;
 let merging=false, dragging=null, suppressClick=false;
@@ -16,6 +16,7 @@ let scenePulse=null, cameraDrag=null;
 let pendingReveal=null,pendingCompletion=false;
 const motionMetrics=new URLSearchParams(location.search).has('motion-check')?{draws:[],intervals:[],last:0}:null;if(motionMetrics)window.__SPARK_MOTION_METRICS__=motionMetrics;
 const formation=new FormationModel.Controller(FormationModel.profile(state.discovered,view,observing),performance.now());
+let replayFrom=null,replayTo=null,worldRunning=false,worldElapsed=0,worldLast=0,worldEffect=null,worldEffectTimer;
 let settledArt=['A universe, waiting to happen','An ember of possibility in the cosmic dark'];
 const worldFeatures=['biofilm','metabolism','transport','planet','heat','volcano','atmosphere','ocean','minerals','vent','light','organics','cell','microbes','photosynthesis','cyanobacteria','biosphere'];
 const lifeExpansion=["nitrogen", "phosphate", "sulfur", "ammonia", "aminoacids", "peptides", "proteins", "sugars", "nucleobases", "nucleosides", "nucleotides", "rna", "dna", "enzymes", "atp", "metabolism", "biofilm", "transport", "co2", "fermentation"];
@@ -36,7 +37,7 @@ function renderSceneText(){
  const art=has('planet')?(has('ocean')?['An ocean of possibility','Your world is becoming a home.']:['A world made of stardust','A new world beside its parent star.']):stageArt[phase];
  settledArt=art;$('#art-title').textContent=art[0];$('#art-subtitle').textContent=art[1];
 let stage=has('biosphere')?4:has('cell')?3:has('planet')?2:has('star')?1:0;const titles=['Everything starts<br>with a little nothing.','A light in<br>the endless dark.','A world waiting<br>to become something.','The smallest life.<br>The biggest beginning.','A little world.<br>Brimming with possibility.'];const descriptions=['An empty canvas. A few possibilities.<br>What will you bring into existence?','From a cloud of possibility, a star.<br>Everything that follows begins here.','Give it oceans. Give it chemistry.<br>Give the extraordinary a place to begin.','A boundary. A little chemistry. A beginning.<br>Help your first life find its place.','You made a home for life.<br>Imagine what it could become.'];$('#scene-title').innerHTML=titles[stage];$('#scene-description').innerHTML=descriptions[stage];$('#chapter-label').textContent=['CHAPTER 01 · THE BEGINNING','CHAPTER 01 · FIRST LIGHT','CHAPTER 01 · A NEW WORLD','CHAPTER 01 · LIFE AWAKENS','CHAPTER 01 · A LIVING OCEAN'][stage];$('#scene-caption').textContent=has('biosphere')?'An entire beginning, made by you.':has('microbes')?'Tiny colonies. An ocean of possibility.':has('ocean')?'Water has found a home.':has('planet')?'Stardust, becoming somewhere.':has('star')?'Your first star is shining.':has('bang')?'There is something where there was nothing.':'The quiet before everything.';$('#planet-view').disabled=!has('planet');$('#planet-view').textContent='Planet'+(!has('planet')?' ◇':'');$('#planet-view').classList.toggle('active',view==='planet');$('#cosmic-view').classList.toggle('active',view==='universe');$('#world-label').hidden=!(view==='planet'&&has('planet'));$('#world-name').textContent=state.name;const milestones=['bang','star','planet','biosphere'];$$('[data-step]').forEach((el,i)=>el.classList.toggle('done',has(milestones[i])));$('#bench-guide').innerHTML=has('bang')?(has('biosphere')?'Your ocean is alive. Explore any discoveries you missed.':'Follow your curiosity. Every discovery opens another door.'):'Try combining <strong>Energy</strong> and <strong>Possibility</strong>.';syncFormation();}
-function render(){document.body.classList.toggle('reduced-motion',state.reduced);renderCollection();renderSlots();renderSceneText();renderExplorer();renderLifeProgress();draw(performance.now());}
+function render(){document.body.classList.toggle('reduced-motion',state.reduced);renderCollection();renderSlots();renderSceneText();renderExplorer();renderLifeProgress();renderTimeline();draw(performance.now());}
 function confirmAction(message){return new Promise(resolve=>{const d=document.createElement('dialog'),p=document.createElement('p'),yes=document.createElement('button'),no=document.createElement('button');p.textContent=message;yes.textContent='Confirm';yes.className='primary';no.textContent='Cancel';no.style.marginLeft='12px';d.append(p,yes,no);document.body.append(d);const finish=value=>{d.close();d.remove();resolve(value);};yes.onclick=()=>finish(true);no.onclick=()=>finish(false);d.oncancel=e=>{e.preventDefault();finish(false);};d.showModal();no.focus();});} function showJournal(){const list=$('#journal-list');list.replaceChildren();for(const id of [...state.discovered].reverse()){const item=byId[id],r=RECIPES.find(r=>r[2]===id),entry=document.createElement('article');entry.className='journal-entry';entry.innerHTML=`<h3><span style="color:${colors[item.category]}">${item.glyph}</span> ${item.name} <span class="science-tag">${item.science}</span></h3><span class="recipe">${r?`${byId[r[0]].name} + ${byId[r[1]].name}`:'Starting ingredient'}</span><p>${item.note}</p>`;list.append(entry);}$('#journal').showModal();}
 $('#combine').onclick=combine;$('#clear').onclick=()=>{if(merging)return;selected=[null,null];renderSlots();say('A clean slate. What will you try?');};$('#search').oninput=renderCollection;
 $$('[data-filter]').forEach(b=>b.onclick=()=>{filter=b.dataset.filter;$$('[data-filter]').forEach(x=>x.classList.toggle('active',x===b));renderCollection();});
@@ -52,21 +53,47 @@ document.addEventListener('keydown',e=>{if(e.key==='/'&&!$('dialog[open]')&&!['I
 const phaseLabels={seed:['A quiet beginning','Energy, before the first structures.'],bang:['The first expansion','Energy spreads into a diffuse, cooling beginning.'],expansion:['Space is expanding','The glowing material spreads and cools.'],cooling:['The universe cools','Diffuse matter becomes quieter and cooler.'],hydrogen:['Gas begins to gather','Hydrogen gives the cloud its raw material.'],cloud:['Gravity gathers a cloud','Cold gas and dust collect into denser knots.'],protostar:['A protostar is taking shape','The cloud contracts; its center grows hotter.'],star:['Fusion is igniting','A hot core brightens as the surrounding cloud clears.'],dust:['Stardust fills the scene','Enriched material spreads around the star.'],disk:['A planetary disk is forming','Gas and grains settle into a broad, rotating disk.'],rock:['Grains gather into rock','Irregular clumps begin to collect in the disk.'],planet:['A world is coming together','Disk material collects into a distinct rocky body.']};
 function syncFormation(){
  const now=performance.now(),next=FormationModel.profile(state.discovered,view,observing),old=formation.target;
- let duration=next.phase==='star'?4200:next.phase==='planet'?4000:next.phase==='protostar'?3600:3000;
+ let duration=next.phase==='star'?6200:next.phase==='planet'?6000:next.phase==='protostar'?5200:4200;
  if(next.phase===formation.phase){if(next.values.focus!==old.focus||next.values.inspection!==old.inspection)duration=1700;else if(next.values.ocean!==old.ocean)duration=3600;else if(next.values.atmosphere!==old.atmosphere)duration=2800;else if(next.values.life!==old.life)duration=3000;}
+ const before=formation.sample(now);
  if(formation.retarget(next,now,state.reduced?0:duration)){
+ if(next.values.focus===old.focus&&next.values.inspection===old.inspection||next.phase!==formation.phase||next.values.planet!==old.planet){replayFrom={phase:next.phase,values:before};replayTo=next;}
  let label=phaseLabels[next.phase];if(next.values.ocean!==old.ocean)label=['An ocean is gathering','Water spreads over the same cooling rocky world.'];else if(next.values.atmosphere!==old.atmosphere)label=['An atmosphere is gathering','A faint envelope slowly thickens around your world.'];else if(next.values.life!==old.life)label=['Life is finding a foothold','Microbial color gradually spreads along the coasts.'];else if((next.values.focus!==old.focus||next.values.inspection!==old.inspection)&&next.phase===formation.phase&&old.planet===next.values.planet)label=['Following your world','The camera moves gently between star and planet.'];
  formation.label=label;$('#formation-status').textContent=label[1];
  }
 }
 function formationUI(now){
  const active=formation.active(now)&&!state.reduced,scene=$('.universe');scene.dataset.phase=formation.phase;scene.dataset.forming=String(active);
- $('#formation-panel').hidden=!active;$('.scene-art-caption').classList.toggle('forming',active);$('#art-subtitle').hidden=active;
+ $('#formation-panel').hidden=!active;$('#replay-formation').textContent=state.reduced?'Enable animations':active?'↻ Restart formation':'↻ Watch formation';$('.scene-art-caption').classList.toggle('forming',active);$('#art-subtitle').hidden=active;
  const title=active?(formation.label||phaseLabels[formation.phase])[0]:settledArt[0];if($('#art-title').textContent!==title)$('#art-title').textContent=title;
  $('#formation-progress').value=Math.round(formation.progress(now)*100);
 }
-function cancelFormationEffects(){pendingReveal=null;pendingCompletion=false;clearTimeout(revealTimer);$('#discovery-reveal').classList.remove('show');}
+function cancelFormationEffects(){$('#event-message').textContent='A world of possibilities awaits.';$('#clock-event').textContent='A world in motion';clearTimeout(worldEffectTimer);worldRunning=false;worldElapsed=0;worldEffect=null;replayFrom=null;replayTo=null;pendingReveal=null;pendingCompletion=false;clearTimeout(revealTimer);$('#discovery-reveal').classList.remove('show');}
 function flushFormationEffects(){if(formation.active(performance.now())&&!state.reduced)return;if(pendingReveal){const item=pendingReveal;pendingReveal=null;revealDiscovery(item.id,item.isNew,true);}if(pendingCompletion&&!$('dialog[open]')){pendingCompletion=false;$('#completion').showModal();}}
+
+function renderTimeline(){
+ const w=state.world,enabled=has('planet');if(!enabled||w.year===0){$('#event-message').textContent='A world of possibilities awaits.';$('#clock-event').textContent='A world in motion';}else if($('#event-message').textContent==='A world of possibilities awaits.'){const e=w.history.at(-1);$('#event-message').textContent=e?'Last event · Year '+e.year.toLocaleString()+': '+WorldHistory.events[e.type].title+'. '+WorldHistory.events[e.type].detail:'Your world is taking its first steps through time.';$('#clock-event').textContent=e?WorldHistory.events[e.type].title:'A world in motion';}$('#year-label').textContent=enabled?'Year '+w.year.toLocaleString():'Time begins with a planet.';
+ $('#time-description').textContent=enabled?(worldRunning?'Time is running · 1,000 years every 8 seconds':'Time is paused · advance when you are ready'):'Create a planet to begin its history.';
+ $('#watch-world').disabled=!enabled;$('#world-clock').hidden=!exploring;$('#clock-year').textContent='Year '+w.year.toLocaleString();$('#clock-run').textContent=worldRunning?'Ⅱ Pause':'▶ Run';$('#clock-step').disabled=formation.active(performance.now());$('#advance-time').disabled=!enabled||formation.active(performance.now());$('#play-time').disabled=!enabled;$('#play-time').textContent=worldRunning?'Ⅱ Pause time':'▶ Run time';$('#play-time').setAttribute('aria-pressed',String(worldRunning));
+ $('#world-vitals').replaceChildren();if(enabled)for(const [label,value]of [['Surface warmth',w.heat],['Available minerals',w.nutrients],['Oxygenation',w.oxygen]]){const el=document.createElement('div');const title=document.createElement('span');title.textContent=label;const number=document.createElement('b');number.textContent=Math.round(value)+' / 100';title.append(number);const bar=document.createElement('meter');bar.min=0;bar.max=100;bar.value=value;bar.setAttribute('aria-label',label);el.append(title,bar);$('#world-vitals').append(el);}
+ $('#species-list').replaceChildren();for(const id of w.species){const a=document.createElement('article'),h=document.createElement('h3'),p=document.createElement('p');h.textContent=WorldHistory.lineages[id].name;p.textContent=WorldHistory.lineages[id].detail;a.append(h,p);$('#species-list').append(a);}
+ if(enabled&&!w.species.length){const p=document.createElement('p');p.textContent='Discover cells, oceans, and energy sources. Then advance time to see microbial lineages adapt.';$('#species-list').append(p);}
+}
+function advanceWorld(){
+ if(!has('planet')||formation.active(performance.now()))return;
+ const result=WorldHistory.advance(state.world,state.discovered);state.world=result.s;
+ let message='Year '+state.world.year.toLocaleString()+': your world continues to change.';
+ if(result.event){const event=WorldHistory.events[result.event.type];message=event.title+'. '+event.detail;worldEffect={type:result.event.type,start:performance.now()};clearTimeout(worldEffectTimer);worldEffectTimer=setTimeout(()=>{worldEffect=null;draw(performance.now());},8000);view='planet';renderSceneText();}
+ if(result.evolved.length)message+=' New lineage: '+result.evolved.map(id=>WorldHistory.lineages[id].name).join(', ')+'.';
+ $('#event-message').textContent=message;$('#clock-event').textContent=result.event?WorldHistory.events[result.event.type].title:result.evolved.length?'A new lineage emerges':'A quieter passage of time';save();renderTimeline();draw(performance.now());
+}
+$('#advance-time').onclick=advanceWorld;$('#clock-step').onclick=advanceWorld;$('#clock-run').onclick=()=>$('#play-time').click();$('#watch-world').onclick=()=>{setExploring(true);$('.universe').scrollIntoView({behavior:state.reduced?'instant':'smooth',block:'start'});};
+$('#play-time').onclick=()=>{worldRunning=!worldRunning;worldElapsed=0;renderTimeline();};
+$('#history-open').onclick=()=>{const list=$('#history-list');list.replaceChildren();for(const e of [...state.world.history].reverse()){const row=document.createElement('article'),h=document.createElement('h3'),p=document.createElement('p');h.textContent='Year '+e.year.toLocaleString()+' · '+WorldHistory.events[e.type].title;p.textContent=WorldHistory.events[e.type].detail;row.append(h,p);list.append(row);}if(!state.world.history.length)list.textContent='No events yet. A new event arrives every 3,000 world years.';$('#history-dialog').showModal();};
+$('#replay-formation').onclick=()=>{
+ if(state.reduced){state.reduced=false;$('#motion').checked=false;document.body.classList.remove('reduced-motion');save();}
+ const now=performance.now();if(replayFrom&&replayTo){const pose=FormationModel.profile(state.discovered,view,observing).values;formation.reset({phase:replayFrom.phase,values:{...replayFrom.values,focus:pose.focus,inspection:pose.inspection}},now);formation.retarget({phase:replayTo.phase,values:{...replayTo.values,focus:pose.focus,inspection:pose.inspection}},now,6200);}else{const target=FormationModel.profile(state.discovered,view,observing),from={phase:target.phase,values:{...target.values}};if(has('planet')){from.values.planet=.03;from.values.planetSize=.04;from.values.dust=.95;from.values.disk=1;}else if(has('star')){from.values.star=.03;from.values.starSize=.05;from.values.gas=.95;from.values.gasSize=1.6;}else{from.values.gas=.03;from.values.gasSize=.3;from.values.core=.02;}formation.reset(from,now);formation.retarget(target,now,6200);}formation.label=phaseLabels[formation.phase];$('#formation-status').textContent=formation.label[1];draw(now);
+};
 
 function renderLifeProgress(){const n=lifeExpansion.filter(has).length;$('#life-path-open').textContent=`Life pathways · ${n} / ${lifeExpansion.length}`;}
 function openLifePaths(){
@@ -97,7 +124,7 @@ function resetCamera(){targetCamera={zoom:1,x:0,y:0};if(state.reduced)camera={..
 function setExploring(value){
  exploring=value&&has('planet');observing=exploring;$('.universe').classList.toggle('observing',observing);$('#observe-scene').setAttribute('aria-pressed',String(observing));$('.universe').classList.toggle('exploring',exploring);
  if(exploring){view='planet';resetCamera();}else resetCamera();
- if(exploring){clearTimeout(revealTimer);$('#discovery-reveal').classList.remove('show');}cameraDrag=null;renderSceneText();renderExplorer();draw(performance.now());
+ if(exploring){clearTimeout(revealTimer);$('#discovery-reveal').classList.remove('show');}cameraDrag=null;renderSceneText();renderExplorer();renderTimeline();draw(performance.now());
 }
 function updateCamera(){
  const limit=(targetCamera.zoom-1)*Math.min(width,height)*.25;
@@ -258,23 +285,45 @@ function drawEmber(x,y,r,t,stellar=false){
 const grains=Array.from({length:100},()=>({angle:random()*Math.PI*2,radial:random(),lift:random()-.5,speed:.12+random()*.30,shade:random()}));
 function drawColdGas(x,y,r,t,v){
  const strength=v.gas*(1-v.focus)*(1-v.focus);if(!ready(artwork.gas)||strength<.002)return;
- ctx.save();ctx.translate(x,y);ctx.rotate(-.18+Math.sin(t*.12)*.045);ctx.scale(1,v.flatten);
- const size=r*v.gasSize*1.5;
- ctx.globalAlpha=strength*.68;ctx.drawImage(artwork.gas,-size,-size,size*2,size*2);
- ctx.rotate(.5);ctx.globalAlpha=strength*.16;ctx.drawImage(artwork.gas,-size*.8,-size*.7,size*1.6,size*1.4);ctx.restore();
+ const seconds=t/.13,collapse=formation.active(performance.now())&&['cloud','protostar','star'].includes(formation.phase),size=r*v.gasSize*1.5;
+ ctx.save();ctx.translate(x,y);ctx.scale(1,v.flatten);ctx.rotate(-.18+seconds*.035);
+ ctx.globalAlpha=strength*.70;ctx.drawImage(artwork.gas,-size,-size,size*2,size*2);
+ // Independently moving wisps deform the silhouette rather than scaling one picture.
+ for(let i=0;i<5;i++){const a=i*2.399+seconds*(.09+i*.012),reach=size*(.13+.07*Math.sin(seconds*.5+i));ctx.save();ctx.translate(Math.cos(a)*reach,Math.sin(a)*reach);ctx.rotate(a*.35);ctx.globalAlpha=strength*.16;ctx.drawImage(artwork.gas,-size*.65,-size*.55,size*1.3,size*1.1);ctx.restore();}
+ ctx.restore();ctx.save();ctx.lineCap='round';
+ for(let i=0;i<grains.length;i++){const grain=grains[i],cycle=(grain.radial+seconds*(collapse?.20:.065))%1;const radial=r*v.gasSize*(collapse?1.7*(1-cycle)+.06:.3+cycle*1.35),angle=grain.angle+seconds*.24+cycle*1.7;
+ const gx=x+Math.cos(angle)*radial,gy=y+Math.sin(angle)*radial*v.flatten*.68,fade=Math.sin(cycle*Math.PI);
+ ctx.globalAlpha=strength*fade*(.25+grain.shade*.55);ctx.strokeStyle=collapse?'#d6ded2':'#9acbd5';ctx.lineWidth=.7+grain.shade;ctx.beginPath();ctx.moveTo(gx,gy);ctx.lineTo(gx+Math.cos(angle-.4)*(collapse?9:4),gy+Math.sin(angle-.4)*4*v.flatten);ctx.stroke();}
+ ctx.restore();
 }
 function drawAccretion(x,y,px,py,r,t,v){
  if(v.disk+v.dust<.002)return;
  if(ready(artwork.gas)&&v.disk>.001){ctx.save();ctx.globalAlpha=v.disk*.17;ctx.translate(x,y);ctx.rotate(-.18);ctx.drawImage(artwork.gas,-r*1.95,-r*.39,r*3.9,r*.78);ctx.restore();}
  ctx.save();ctx.lineCap='round';
  for(const grain of grains){
- const angle=grain.angle+t*grain.speed,radial=r*(.65+grain.radial*1.25),settle=grain.radial>.35?FormationModel.smooth((v.planet-.05)/.95):0;
+ const angle=grain.angle+t*grain.speed*18,radial=r*(.65+grain.radial*1.25),settle=grain.radial>.35?FormationModel.smooth((v.planet-.05)/.95):0;
  const gx=x+Math.cos(angle)*radial,gy=y+Math.sin(angle)*radial*(.22+.20*(1-v.disk))+grain.lift*r*.15;
  const dx=gx+(px-gx)*settle,dy=gy+(py-gy)*settle;
  ctx.globalAlpha=v.dust*(.18+grain.shade*.5)*(1-settle);ctx.strokeStyle=grain.shade>.6?'#d8b891':'#86a8b4';ctx.lineWidth=.7+grain.shade*1.3;
  if(grain.shade>.76&&v.disk>.3){const size=(1.8+grain.shade*2.8)*(1-settle*.6);ctx.save();ctx.translate(dx,dy);ctx.rotate(angle);ctx.fillStyle=grain.shade>.9?'#a58a70':'#6f8491';ctx.beginPath();ctx.moveTo(-size,-size*.35);ctx.lineTo(-size*.15,-size*.75);ctx.lineTo(size*.8,-size*.2);ctx.lineTo(size*.5,size*.7);ctx.lineTo(-size*.6,size*.45);ctx.closePath();ctx.fill();ctx.restore();}
- ctx.beginPath();ctx.moveTo(dx,dy);ctx.lineTo(dx-Math.sin(angle)*(1+grain.shade*3),dy+Math.cos(angle)*(.4+grain.shade));ctx.stroke();
+ ctx.beginPath();ctx.moveTo(dx,dy);ctx.lineTo(dx-Math.sin(angle)*(4+grain.shade*10),dy+Math.cos(angle)*(1+grain.shade*3));ctx.stroke();
  }ctx.restore();
+}
+function drawWorldEvent(x,y,r,now,v){
+ if(!worldEffect||v.planet<.8||r<2)return;const elapsed=state.reduced?2:(now-worldEffect.start)/1000;if(elapsed>8){worldEffect=null;return;}
+ const fade=state.reduced?.75:Math.min(1,elapsed*2,Math.max(0,(8-elapsed)/2));const type=worldEffect.type;
+ ctx.save();ctx.globalAlpha=fade;
+ if(type==='meteor'){const q=Math.min(1,elapsed/2),ax=x-r*2.3+q*r*2.6,ay=y-r*1.5+q*r*1.15;ctx.strokeStyle='#ffd9a5';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(ax-r*.35,ay-r*.16);ctx.lineTo(ax,ay);ctx.stroke();glow(ax,ay,r*.13,'#fff3bfcc','#f6a36400');if(q===1)glow(x+r*.3,y-r*.35,r*.3* Math.max(.1,1-(elapsed-2)/5),'#ffba6b88','#ff984400');}
+ if(type==='volcano'){const vx=x-r*.28,vy=y-r*.40;
+ // Shaded caldera and rough radial ridges sit within the planet's perspective.
+ const rock=ctx.createRadialGradient(vx-r*.025,vy-r*.03,r*.015,vx,vy,r*.19);rock.addColorStop(0,'#665249');rock.addColorStop(.45,'#353d40');rock.addColorStop(1,'#283b3d00');ctx.fillStyle=rock;ctx.beginPath();ctx.ellipse(vx,vy+r*.03,r*.19,r*.12,-.3,0,Math.PI*2);ctx.fill();
+ for(let ridge=0;ridge<15;ridge++){const a=ridge*2.399,extent=r*(.08+.06*(.5+.5*Math.sin(ridge*8)));ctx.strokeStyle=ridge%2?'#d1b6a326':'#0c1c2360';ctx.lineWidth=Math.max(.6,r*.006);ctx.beginPath();ctx.moveTo(vx+Math.cos(a)*r*.035,vy+Math.sin(a)*r*.02);ctx.quadraticCurveTo(vx+Math.cos(a+.12)*extent*.6,vy+Math.sin(a)*extent*.35,vx+Math.cos(a)*extent,vy+Math.sin(a)*extent*.65);ctx.stroke();}
+ ctx.strokeStyle='#ff9a49';ctx.lineWidth=Math.max(1,r*.009);ctx.beginPath();ctx.moveTo(vx,vy);ctx.bezierCurveTo(vx+r*.025,vy+r*.04,vx-r*.02,vy+r*.08,vx+r*.07,vy+r*.10);ctx.stroke();ctx.fillStyle='#ffb96f';ctx.beginPath();ctx.ellipse(vx,vy-r*.012,r*.036,r*.017,-.3,0,Math.PI*2);ctx.fill();ctx.fillStyle='#6d2c22';ctx.beginPath();ctx.ellipse(vx,vy-r*.013,r*.022,r*.009,-.3,0,Math.PI*2);ctx.fill();glow(vx,vy,r*.28,'#ff9b3266','#fa5b2200');for(let i=0;i<44;i++){const q=(elapsed*.65+i*.071)%1,spread=Math.sin(i*12.3)*r*.34;const ex=vx+spread*q,ey=vy-r*(.9*q-.72*q*q);ctx.strokeStyle=i%3?'#ffb55c':'#ff683f';ctx.lineWidth=1.3;ctx.beginPath();ctx.moveTo(ex,ey);ctx.lineTo(ex-spread*.05,ey+r*.035);ctx.stroke();}for(let i=0;i<8;i++){const q=(elapsed*.17+i*.12)%1;glow(vx+Math.sin(i)*r*.13+q*r*.18,vy-q*r*.8,r*(.09+q*.20),'#98a3b34d','#66738100');}}
+ ctx.beginPath();ctx.arc(x,y,r,0,Math.PI*2);ctx.clip();
+ if(type==='rain'){ctx.strokeStyle='#9bdcffaa';ctx.lineWidth=1;for(let i=0;i<75;i++){const a=((i*.618)%1)*r*2-r,b=((i*.371+elapsed*.45)%1)*r*2-r;ctx.beginPath();ctx.moveTo(x+a,y+b);ctx.lineTo(x+a-r*.025,y+b+r*.09);ctx.stroke();}}
+ if(type==='bloom'){for(let i=0;i<16;i++){const a=Math.sin(i*3.9)*r*.8,b=Math.cos(i*2.7)*r*.7;glow(x+a,y+b,r*(.05+.03*Math.sin(elapsed*2+i)),'#72e8bc66','#72e8bc00');}}
+ if(type==='quiet'){ctx.strokeStyle='#b8dbe955';ctx.lineWidth=2;for(let i=0;i<3;i++){ctx.beginPath();ctx.ellipse(x,y,r*(.2+(elapsed*.08+i*.25)%1),r*.45,-.3,0,Math.PI*2);ctx.stroke();}}
+ ctx.restore();
 }
 function draw(now){
  const drawStart=motionMetrics?performance.now():0;
@@ -283,7 +332,7 @@ function draw(now){
  const v=formation.sample(now),t=state.reduced?0:now*.00013,mobile=width<600;
  ctx.clearRect(0,0,width,height);paintNebula(t,v);
  const normalX=mobile?.38:.72,normalY=mobile?.38:.30;
- const cx=width*(normalX+(.5-normalX)*v.inspection)+camera.x,cy=height*(normalY+(.37-normalY)*v.inspection)+camera.y;
+ const cx=width*(normalX+(.5-normalX)*v.inspection)+camera.x,cy=height*(normalY+(.37+.07*v.focus-normalY)*v.inspection)+camera.y;
  const overviewRadius=Math.min(width*(mobile?.22:.17),height*.19),inspectRadius=Math.min(width*.29,height*.25);
  const base=overviewRadius+(inspectRadius-overviewRadius)*v.inspection,r=base*camera.zoom;
  const sx=cx-v.focus*r*1.55,sy=cy-v.focus*r*.15,px=cx+(1-v.focus)*r*1.25,py=cy+(1-v.focus)*r*.35;
@@ -292,10 +341,10 @@ function draw(now){
  drawAccretion(sx,sy,px,py,r,t,v);
  const starRadius=r*v.starSize*(1-v.focus*.55);if(v.star>.002&&sx+starRadius*1.5>0&&sx-starRadius*1.5<width){ctx.save();ctx.globalAlpha=v.star*(1-v.focus*.65);drawEmber(sx,sy,starRadius,t,true);ctx.restore();}
  if(v.planet>.002)drawPlanet(px,py,r*v.planetSize*(.34+v.focus*.66),t,v,v.focus<.05);
- formationUI(now);flushFormationEffects();
+ drawWorldEvent(px,py,r*v.planetSize*(.34+v.focus*.66),now,v);formationUI(now);if(has('planet')){$('#advance-time').disabled=formation.active(now);$('#clock-step').disabled=formation.active(now);}flushFormationEffects();
  if(motionMetrics){const stamp=performance.now();motionMetrics.renderScale=renderQuality.scale;motionMetrics.draws.push(stamp-drawStart);if(motionMetrics.last)motionMetrics.intervals.push(stamp-motionMetrics.last);motionMetrics.last=stamp;if(motionMetrics.draws.length>300)motionMetrics.draws.shift();if(motionMetrics.intervals.length>300)motionMetrics.intervals.shift();}
 }
 
-let last=0;function animate(time){if(!state.reduced&&!document.hidden&&time-last>16){draw(time);last=time;}requestAnimationFrame(animate);}save();render();requestAnimationFrame(animate);
+let last=0;function animate(time){const dt=Math.min(100,time-(worldLast||time));worldLast=time;if(worldRunning&&!document.hidden&&!$('dialog[open]')&&!formation.active(time)){worldElapsed+=dt;if(worldElapsed>=8000){worldElapsed=0;advanceWorld();}}if(!state.reduced&&!document.hidden&&time-last>16){draw(time);last=time;}requestAnimationFrame(animate);}save();render();requestAnimationFrame(animate);
 
 })();

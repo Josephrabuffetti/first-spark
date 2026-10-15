@@ -30,3 +30,11 @@ Use case: stylized-concept. Asset type: equirectangular planetary surface textur
 ### Stellar plasma
 
 Use case: stylized-concept. Asset type: equirectangular stellar energy surface texture for a sphere in the First Spark cosmic discovery game. A full-bleed flat rectangular 2:1 texture of amber and pale golden plasma, flowing luminous convection cells, delicate darker copper filaments and curling fluid energy. Painterly cinematic sophistication, soft warm gold with fine physical detail, luminous and restrained rather than neon orange. No white overexposure, no recognizable solar photograph. Uniform all-over surface detail, left and right edges should visually tile. No sphere or circle, no perspective, no black background, no text, no labels, no border, no grid, no UI.
+
+## v6 cold gas sprite
+
+- Shipped path: `assets/ai-cold-cloud.webp` (preserved alpha).
+- Generation mode: built-in `image_gen`, separate text-to-image request with transparency, no external references.
+- Purpose: cold, irregular material that can visibly contract before any star appears. Other v5 textures remain the same materials.
+
+Prompt: Use case: stylized-concept. Asset type: transparent gas-and-dust sprite for a refined astrophysical formation animation in First Spark. Create a single isolated wispy molecular cloud with intricate flowing translucent gas filaments, dark dust lanes, diffuse cool blue-gray and very subtle teal scattering. Volumetric cinematic astrophotography-inspired realism, restrained and sophisticated, not cartoon. Cloud occupies a broad irregular oval shape with feathery, smoothly fading transparent edges. Slightly denser center but absolutely NO glowing core, NO star, NO sun, NO planet, NO spheres, NO circular outlines, NO rings, NO spirals, NO lens flare, NO background starfield, NO text, NO symbols, NO border. This is the cold raw material BEFORE a star forms; center must remain a cloudy dust knot, not an already formed astronomical body. Actual transparent background throughout and between filaments. Square canvas, generous transparent margins, high detail that survives scaling. Match a dark indigo space game with gentle teal/lavender light.

@@ -4,6 +4,14 @@ A cosmic discovery game: combine ingredients to turn a first spark into stars, a
 
 Play: https://josephrabuffetti.github.io/first-spark/
 
+## v6 · See things form
+
+Scene changes now use a persistent formation model rather than switching between a seed, cloud, star, and planet renderer. Cold gas contracts into a visibly warming protostar, fusion gradually reveals a stellar surface, and irregular disk fragments converge into a separate rocky body. The star remains visible as the camera follows the new world. Atmosphere, ocean material, and microbial coastal color interpolate on the same globe.
+
+Major changes take roughly 2–4 seconds, have readable progress, and postpone discovery overlays until the formation is visible. Rapid subsequent discoveries retarget from the displayed state rather than restarting. Unrelated molecular recipes do not flash or restart the cosmic scene. Reduced motion settles immediately. Existing saves load settled; reset/import cancel obsolete visual effects.
+
+The implementation brief and review criteria are in [VISUAL_BRIEF.md](VISUAL_BRIEF.md). Testing and independent critique results are recorded in [VISUAL_REVIEW.md](VISUAL_REVIEW.md).
+
 ## v5 · Original AI art and the chemistry of life
 
 The old borrowed artwork has been replaced by a cohesive generated set: a quiet indigo nebula, a fictional basalt world, an ocean world with original geography, and flowing golden stellar plasma. The opening uses a soft energy wisp instead of a tiny dot, hard sphere, or geometric spiral. Atmosphere, lighting, coastal microbial color, and movement are drawn by the game. See [ART_DIRECTION.md](ART_DIRECTION.md) for the asset paths, generation mode, and prompts.
@@ -24,6 +32,7 @@ Click two ingredients and Merge, or drag one field orb into another. Ingredients
 
 - `npm test`: recipe uniqueness, all 60 discoveries reachable, science notes, and preservation of the original 40-item progression.
 - `node --check game.js`: syntax.
+- `npm run test:animation`: normal-motion captures of six formation sequences, rapid progression, reduced-motion completion, accessible status, mobile layout, and instrumented desktop rendering. `ANIMATION_DIR` selects the capture folder. The PNG difference check only confirms changing frames; formation quality requires the recorded visual review, not just a checksum.
 - `npm install`, `npx playwright install chromium`, `npm run test:browser`: actual controls for all 56 recipes, a legacy save, the new pathways panel, zoom, exploration, save reload, reduced motion, mobile overflow, and screenshot review. `CHROMIUM_PATH`, `TEST_PORT`, and `SCREENSHOT_DIR` optionally select a browser executable, port, and screenshot folder.
 
 ## Source and hosting

@@ -2,11 +2,17 @@
 
 A cozy browser discovery game. Combine ingredients to move from a fictional cosmic beginning to stars, a rocky planet, and a living microbial ocean.
 
+Play online: https://josephrabuffetti.github.io/first-spark/
+
+## Visual and interaction upgrade (v2)
+
+The observatory now has a central creation field, glowing ingredient orbs, a textured rotating planet, and atmospheric nebula lighting. Drag a collection ingredient into the field, then drop another onto it to merge. You can also drag the two field orbs together. Magnetic highlighting, collision animations, discovery reveals, and particle bursts celebrate successful combinations; unmatched pairs gently rebound. Click-and-Merge and keyboard controls remain available. Existing v1 saves remain compatible.
+
 ## Play
 
 Open `index.html` directly in a modern browser. No installation or build is required. For a consistent browser-save origin, use Node.js and run `npm start`, then open http://127.0.0.1:4173.
 
-Click two ingredient cards (or drag them into the cradle), then choose **Create**. Ingredients are reusable, including combining an ingredient with itself. Click a filled cradle slot to clear it. Hints first give a clue, then prepare a recipe on a second click.
+Click two ingredient cards and choose **Merge**, or drag one ingredient onto another inside the creation field. Ingredients are reusable, including combining an ingredient with itself. Click a filled field slot to clear it. Hints first give a clue, then prepare a recipe on a second click.
 
 ## Included
 
@@ -21,11 +27,11 @@ Click two ingredient cards (or drag them into the cradle), then choose **Create*
 
 `npm test` checks the discovery graph for completeness, unique recipes, and journal metadata. `node --check game.js` checks the main script syntax.
 
-`data.js` contains the ingredients and recipe graph. `game.js` contains interactions, persistence, and canvas art. `style.css` contains responsive styling. No packages or build tools are needed. Google Fonts is optional; system fonts work offline. All illustrations and sounds are generated locally.
+`data.js` contains the ingredients and recipe graph. `game.js` contains pointer interactions, persistence, animations, and canvas art. `style.css` contains base styling and `experience.css` the v2 visual design. No packages or build tools are needed. Google Fonts is optional; system fonts work offline. All illustrations and sounds are generated locally.
 
 ## Hosting later
 
-The static files can be hosted on GitHub Pages. Publish `index.html`, `style.css`, `data.js`, and `game.js` together at the same path. The Node server is only a local convenience. No backend or API keys are needed. Repository: https://github.com/Josephrabuffetti/first-spark
+The static files are hosted on GitHub Pages from `main`. Publish `index.html`, `style.css`, `experience.css`, `data.js`, and `game.js` together at the same path. The Node server is only a local convenience. No backend or API keys are needed. Repository: https://github.com/Josephrabuffetti/first-spark
 
 Progress is stored per browser and origin. Export progress before switching from a local file to localhost or a hosted version. Science recipes are simplified game abstractions, not a simulation of cosmic evolution or a proven origin-of-life pathway.
 

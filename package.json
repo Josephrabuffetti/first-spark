@@ -1,6 +1,6 @@
 {
   "name": "first-spark",
-  "version": "4.0.0",
+  "version": "5.0.0",
   "private": true,
   "description": "A browser alchemy game from the first spark to a living ocean.",
   "scripts": {

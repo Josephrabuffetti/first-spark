@@ -1,49 +1,33 @@
 # First Spark
 
-A cozy browser discovery game. Combine ingredients to move from a fictional cosmic beginning to stars, a rocky planet, and a living microbial ocean.
+A cosmic discovery game: combine ingredients to turn a first spark into stars, a rocky world, and a living ocean.
 
-Play online: https://josephrabuffetti.github.io/first-spark/
+Play: https://josephrabuffetti.github.io/first-spark/
 
-## Illustrated universe and visible zoom (v4)
+## v5 · Original AI art and the chemistry of life
 
-The observatory now uses locally hosted nebula art by Rawdanitsu (CC0) and Sun, Mars, Earth, and cloud textures by Solar System Scope / INOVE (CC BY 4.0). See [ASSET_CREDITS.md](ASSET_CREDITS.md) and **How to play → Artwork & credits**. No AI-generated assets are used.
+The old borrowed artwork has been replaced by a cohesive generated set: a quiet indigo nebula, a fictional basalt world, an ocean world with original geography, and flowing golden stellar plasma. The opening uses a soft energy wisp instead of a tiny dot, hard sphere, or geometric spiral. Atmosphere, lighting, coastal microbial color, and movement are drawn by the game. See [ART_DIRECTION.md](ART_DIRECTION.md) for the asset paths, generation mode, and prompts.
 
-The opening and early universe have textured cosmic artwork in place of geometric spirals. Planets use spherical texture projection, moving cloud cover, atmospheric scattering, and directional lighting. Earth and Mars imagery illustrates fictional developmental stages; it is not a reconstruction of early Earth.
+There are now **60 discoveries and 56 recipes**. The 20 new discoveries include nitrogen, phosphate, sulfur, ammonia, amino acids, peptides, proteins, sugars, nucleobases, nucleosides, nucleotides, RNA, DNA, enzymes, ATP, metabolism, biofilms, membrane transport, carbon dioxide, and fermentation.
 
-**Zoom − / + and Reset are available from the first screen**, in every scene. **Focus view** hides the creation field for a closer look; drag to pan or scroll to zoom. Escape returns to creating. Once a planet exists, **Explore your planet** opens the world explorer and discovery notes. Existing v1 saves still load.
+**Life pathways** in the collection shows four paths, progress, prerequisite clues, and buttons to prepare recipes when both ingredients are available. Original recipes, item IDs, and v1 save format are preserved; old 40-discovery saves can continue directly into the expansion.
 
-Validation: recipe graph, JavaScript syntax, all 36 combinations through actual Chromium controls, completion, save reload, zoom before any discovery, Focus/Escape, planet exploration, pan, reduced motion, and mobile horizontal overflow. Desktop and mobile screenshots inspected in Chromium.
+Zoom − / + and Reset are visible from the first screen. Focus view hides the creation field for a closer look. Drag to pan and scroll to zoom in Focus or Explore mode. Escape returns to creating. Once a planet exists, Explore your planet opens discovery notes. Reduced motion remains available.
 
-## Previous visual and interaction upgrade (v2)
+## Play locally
 
-The observatory now has a central creation field, glowing ingredient orbs, a textured rotating planet, and atmospheric nebula lighting. Drag a collection ingredient into the field, then drop another onto it to merge. You can also drag the two field orbs together. Magnetic highlighting, collision animations, discovery reveals, and particle bursts celebrate successful combinations; unmatched pairs gently rebound. Click-and-Merge and keyboard controls remain available. Existing v1 saves remain compatible.
+Open `index.html` in a modern browser, or run `npm start` and visit http://127.0.0.1:4173. No runtime dependencies, build step, backend, or API key are needed. Development-only Playwright is used by the optional browser checks.
 
-## Play
+Click two ingredients and Merge, or drag one field orb into another. Ingredients are reusable. Hints first offer a clue, then prepare a pairing. The journal includes recipe and science notes. The living ocean remains Chapter One's milestone; the extra chemistry can be explored before or after completion.
 
-Open `index.html` directly in a modern browser. No installation or build is required. For a consistent browser-save origin, use Node.js and run `npm start`, then open http://127.0.0.1:4173.
+## Validation
 
-Click two ingredient cards and choose **Merge**, or drag one ingredient onto another inside the creation field. Ingredients are reusable, including combining an ingredient with itself. Click a filled field slot to clear it. Hints first give a clue, then prepare a recipe on a second click.
+- `npm test`: recipe uniqueness, all 60 discoveries reachable, science notes, and preservation of the original 40-item progression.
+- `node --check game.js`: syntax.
+- `npm install`, `npx playwright install chromium`, `npm run test:browser`: actual controls for all 56 recipes, a legacy save, the new pathways panel, zoom, exploration, save reload, reduced motion, mobile overflow, and screenshot review. `CHROMIUM_PATH`, `TEST_PORT`, and `SCREENSHOT_DIR` optionally select a browser executable, port, and screenshot folder.
 
-## Included
+## Source and hosting
 
-- 40 discoveries and 36 recipes, all reachable from four starting ingredients.
-- Procedural animated universe and planet, with four milestones.
-- Universe/planet views, discovery filters, search, keyboard controls, and responsive layouts.
-- Science notes distinguishing established science, open questions, and fiction.
-- Browser saves, named worlds, export/import, optional synthesized sounds, reduced motion, and confirmed reset.
-- A complete first chapter ending in a living microbial ocean; later civilizations are a future expansion.
+GitHub Pages serves `main`. Publish HTML, CSS, JavaScript, `icon.svg`, and `assets/` together. Assets are hosted locally to the site. Progress is stored per browser and origin; export it before changing origin or clearing browser data. The local Node server is only a convenience.
 
-## Development
-
-`npm test` checks the discovery graph for completeness, unique recipes, and journal metadata. `node --check game.js` checks the main script syntax.
-
-`data.js` contains the ingredients and recipe graph. `game.js` contains pointer interactions, persistence, animations, and canvas art. `style.css` contains base styling and `experience.css` the v2 visual design. No packages or build tools are needed. Google Fonts is optional; system fonts work offline. Artwork is served locally; sounds are synthesized locally.
-
-For browser checks, run `npm install`, `npx playwright install chromium`, then `npm run test:browser`. Set `CHROMIUM_PATH` to use an existing Chromium executable; optional `SCREENSHOT_DIR` controls where the six review screenshots go. The game itself still needs no dependencies or build step.
-
-## Hosting later
-
-The static files are hosted on GitHub Pages from `main`. Publish `index.html`, `style.css`, `experience.css`, `data.js`, `game.js`, and `icon.svg`, and `assets/` together at the same path. The Node server is only a local convenience. No backend or API keys are needed. Repository: https://github.com/Josephrabuffetti/first-spark
-
-Progress is stored per browser and origin. Export progress before switching from a local file to localhost or a hosted version. Science recipes are simplified game abstractions, not a simulation of cosmic evolution or a proven origin-of-life pathway.
-
+Recipes are simplified game abstractions, not laboratory instructions or a proven pathway to the origin of life. [ROADMAP.md](ROADMAP.md) records the requested next patch; years, random planetary events, species evolution, and eruptions are not simulated in v5.

@@ -13,7 +13,8 @@ let merging=false, dragging=null, suppressClick=false;
 let observing=false;
 let exploring=false, inspected='planet', camera={zoom:1,x:0,y:0}, targetCamera={zoom:1,x:0,y:0};
 let worldChange=null, scenePulse=null, cameraDrag=null;
-const worldFeatures=['planet','heat','volcano','atmosphere','ocean','minerals','vent','light','organics','cell','microbes','photosynthesis','cyanobacteria','biosphere'];
+const worldFeatures=['biofilm','metabolism','transport','planet','heat','volcano','atmosphere','ocean','minerals','vent','light','organics','cell','microbes','photosynthesis','cyanobacteria','biosphere'];
+const lifeExpansion=["nitrogen", "phosphate", "sulfur", "ammonia", "aminoacids", "peptides", "proteins", "sugars", "nucleobases", "nucleosides", "nucleotides", "rna", "dna", "enzymes", "atp", "metabolism", "biofilm", "transport", "co2", "fermentation"];
 const clamp=(n,a,b)=>Math.max(a,Math.min(b,n));
 
 const has=id=>state.discovered.includes(id);
@@ -32,7 +33,7 @@ function renderSceneText(){
  const art=has('planet')?(has('ocean')?['An ocean of possibility','Your world is becoming a home']:['A world made of stardust','Zoom in. This beginning belongs to you.']):has('star')?['Your first star','A new light in the endless dark']:has('cloud')?['A stellar nursery','Gravity is gathering the ingredients of light']:has('bang')?['The first light','A beginning unfolds in the cosmic dust']:['A universe, waiting to happen','An ember of possibility in the cosmic dark'];
  $('#art-title').textContent=art[0];$('#art-subtitle').textContent=art[1];
 let stage=has('biosphere')?4:has('cell')?3:has('planet')?2:has('star')?1:0;const titles=['Everything starts<br>with a little nothing.','A light in<br>the endless dark.','A world waiting<br>to become something.','The smallest life.<br>The biggest beginning.','A little world.<br>Brimming with possibility.'];const descriptions=['An empty canvas. A few possibilities.<br>What will you bring into existence?','From a cloud of possibility, a star.<br>Everything that follows begins here.','Give it oceans. Give it chemistry.<br>Give the extraordinary a place to begin.','A boundary. A little chemistry. A beginning.<br>Help your first life find its place.','You made a home for life.<br>Imagine what it could become.'];$('#scene-title').innerHTML=titles[stage];$('#scene-description').innerHTML=descriptions[stage];$('#chapter-label').textContent=['CHAPTER 01 · THE BEGINNING','CHAPTER 01 · FIRST LIGHT','CHAPTER 01 · A NEW WORLD','CHAPTER 01 · LIFE AWAKENS','CHAPTER 01 · A LIVING OCEAN'][stage];$('#scene-caption').textContent=has('biosphere')?'An entire beginning, made by you.':has('microbes')?'Tiny colonies. An ocean of possibility.':has('ocean')?'Water has found a home.':has('planet')?'Stardust, becoming somewhere.':has('star')?'Your first star is shining.':has('bang')?'There is something where there was nothing.':'The quiet before everything.';$('#planet-view').disabled=!has('planet');$('#planet-view').textContent='Planet'+(!has('planet')?' ◇':'');$('#planet-view').classList.toggle('active',view==='planet');$('#cosmic-view').classList.toggle('active',view==='universe');$('#world-label').hidden=!(view==='planet'&&has('planet'));$('#world-name').textContent=state.name;const milestones=['bang','star','planet','biosphere'];$$('[data-step]').forEach((el,i)=>el.classList.toggle('done',has(milestones[i])));$('#bench-guide').innerHTML=has('bang')?(has('biosphere')?'Your ocean is alive. Explore any discoveries you missed.':'Follow your curiosity. Every discovery opens another door.'):'Try combining <strong>Energy</strong> and <strong>Possibility</strong>.';}
-function render(){document.body.classList.toggle('reduced-motion',state.reduced);renderCollection();renderSlots();renderSceneText();renderExplorer();draw(performance.now());}
+function render(){document.body.classList.toggle('reduced-motion',state.reduced);renderCollection();renderSlots();renderSceneText();renderExplorer();renderLifeProgress();draw(performance.now());}
 function confirmAction(message){return new Promise(resolve=>{const d=document.createElement('dialog'),p=document.createElement('p'),yes=document.createElement('button'),no=document.createElement('button');p.textContent=message;yes.textContent='Confirm';yes.className='primary';no.textContent='Cancel';no.style.marginLeft='12px';d.append(p,yes,no);document.body.append(d);const finish=value=>{d.close();d.remove();resolve(value);};yes.onclick=()=>finish(true);no.onclick=()=>finish(false);d.oncancel=e=>{e.preventDefault();finish(false);};d.showModal();no.focus();});} function showJournal(){const list=$('#journal-list');list.replaceChildren();for(const id of [...state.discovered].reverse()){const item=byId[id],r=RECIPES.find(r=>r[2]===id),entry=document.createElement('article');entry.className='journal-entry';entry.innerHTML=`<h3><span style="color:${colors[item.category]}">${item.glyph}</span> ${item.name} <span class="science-tag">${item.science}</span></h3><span class="recipe">${r?`${byId[r[0]].name} + ${byId[r[1]].name}`:'Starting ingredient'}</span><p>${item.note}</p>`;list.append(entry);}$('#journal').showModal();}
 $('#combine').onclick=combine;$('#clear').onclick=()=>{if(merging)return;selected=[null,null];renderSlots();say('A clean slate. What will you try?');};$('#search').oninput=renderCollection;
 $$('[data-filter]').forEach(b=>b.onclick=()=>{filter=b.dataset.filter;$$('[data-filter]').forEach(x=>x.classList.toggle('active',x===b));renderCollection();});
@@ -45,6 +46,16 @@ $('#save-name').onclick=()=>{state.name=$('#name-input').value.trim().slice(0,30
 $('#reset').onclick=async()=>{if(!await confirmAction('Start over? Your current discoveries will be erased. You can export progress first.'))return;setExploring(false);worldChange=null;scenePulse=null;state=defaultState();selected=[null,null];fresh=null;filter='All';view='universe';hintTarget=null;hintLevel=0;$('#search').value='';$$('[data-filter]').forEach(b=>b.classList.toggle('active',b.dataset.filter==='All'));save();render();$('#settings').close();say('A new beginning. Try Energy + Possibility.');};
 $('#export-save').onclick=()=>{const blob=new Blob([JSON.stringify(state,null,2)],{type:'application/json'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='first-spark-progress.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);$('#settings-feedback').textContent='Progress exported.';};$('#import-save').onchange=async e=>{const file=e.target.files[0];if(!file)return;try{if(file.size>100000)throw Error('This file is too large to be a progress save.');const next=validate(JSON.parse(await file.text()));if(!await confirmAction('Replace your current progress with this save?'))return;setExploring(false);worldChange=null;scenePulse=null;state=next;selected=[null,null];fresh=null;hintTarget=null;hintLevel=0;view=has('planet')?'planet':'universe';save();render();$('#name-input').value=state.name;$('#sound').checked=state.sound;$('#motion').checked=state.reduced;$('#settings-feedback').textContent='Progress restored.';}catch(err){$('#settings-feedback').textContent='Could not import: '+err.message;}finally{e.target.value='';}};
 document.addEventListener('keydown',e=>{if(e.key==='/'&&!$('dialog[open]')&&!['INPUT','TEXTAREA'].includes(document.activeElement.tagName)){e.preventDefault();$('#search').focus();}});
+function renderLifeProgress(){const n=lifeExpansion.filter(has).length;$('#life-path-open').textContent=`Life pathways · ${n} / ${lifeExpansion.length}`;}
+function openLifePaths(){
+ const groups=[['The ingredients','Nitrogen, minerals, and the chemistry life can use.',['nitrogen','phosphate','sulfur','ammonia','co2']],['Proteins & energy','From amino acids to chemistry that powers a cell.',['aminoacids','peptides','proteins','enzymes','atp','metabolism','transport','fermentation']],['Genetic chemistry','Sugars and bases become the building blocks of information.',['sugars','nucleobases','nucleosides','nucleotides','rna','dna']],['Living communities','Microbes begin to build a shared home.',['biofilm']]];
+ const list=$('#life-path-list');list.replaceChildren();
+ for(const[title,description,ids]of groups){const card=document.createElement('article');card.className='life-path-card';const h=document.createElement('h3');h.textContent=title;const p=document.createElement('p');p.textContent=description;const progress=document.createElement('small');progress.textContent=`${ids.filter(has).length} / ${ids.length} discovered`;const tokens=document.createElement('div');tokens.className='path-tokens';for(const id of ids){const token=document.createElement('span');token.classList.toggle('unlocked',has(id));token.textContent=byId[id].name;tokens.append(token);}card.append(h,p,progress,tokens);
+ const next=RECIPES.find(r=>ids.includes(r[2])&&!has(r[2])&&has(r[0])&&has(r[1]));if(next){const b=document.createElement('button');b.className='primary';b.textContent='Prepare '+byId[next[2]].name;b.onclick=()=>{if(merging)return;filter='All';$('#search').value='';$$('[data-filter]').forEach(x=>x.classList.toggle('active',x.dataset.filter==='All'));selected=next.slice(0,2);renderCollection();renderSlots();$('#life-paths').close();say(`Ready: ${byId[next[0]].name} + ${byId[next[1]].name}. Press Merge.`);$('#combine').focus();};card.append(b);}else if(ids.every(has)){const done=document.createElement('p');done.textContent='Pathway complete';done.className='path-complete';card.append(done);}else{const hint=document.createElement('p');hint.className='path-locked';const missing=RECIPES.find(r=>ids.includes(r[2])&&!has(r[2]));hint.textContent=missing?`Next: discover ${byId[missing[0]].name} and ${byId[missing[1]].name}.`:'Keep discovering.';card.append(hint);}list.append(card);
+ }$('#life-paths').showModal();
+}
+$('#life-path-open').onclick=()=>{if(!merging)openLifePaths();};
+
 // Exploration is a temporary camera mode; it never changes saved progress.
 function renderExplorer(){
  $('#world-controls').hidden=!has('planet')||exploring;
@@ -135,7 +146,7 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape')cancelDrag();});
 // Locally hosted artwork: see ASSET_CREDITS.md for creators and licenses.
 const canvas=$('#cosmos'),ctx=canvas.getContext('2d');let width=1,height=1;
 const artwork={};let artRevision=0;
-for(const [name,file] of Object.entries({nebula:'nebula.webp',earth:'earth.jpg',rocky:'rocky.jpg',clouds:'clouds.jpg',sun:'sun.jpg'})){
+for(const [name,file] of Object.entries({nebula:'ai-nebula.webp',earth:'ai-ocean.webp',rocky:'ai-rocky.webp',sun:'ai-stellar.webp'})){
  const img=new Image();artwork[name]=img;
  img.onload=()=>{artRevision++;planetTextureKey='';draw(performance.now());};
  img.onerror=()=>{artwork[name]=null;draw(performance.now());};img.src='assets/'+file;
@@ -150,7 +161,7 @@ function paintNebula(t){
  ctx.fillStyle='#070e1c';ctx.fillRect(0,0,width,height);
  if(ready(artwork.nebula)){
   const scale=Math.max(width/artwork.nebula.width,height*.8/artwork.nebula.height)*1.08;
-  ctx.save();ctx.globalAlpha=has('bang')?.48:.3;
+  ctx.save();ctx.globalAlpha=has('bang')?.86:.68;
   ctx.drawImage(artwork.nebula,width*.52-artwork.nebula.width*scale*.5+Math.sin(t*.08)*8,-height*.16,artwork.nebula.width*scale,artwork.nebula.height*scale);ctx.restore();
  }
  const shade=ctx.createLinearGradient(0,0,0,height);shade.addColorStop(0,'#09132622');shade.addColorStop(.48,'#09142638');shade.addColorStop(.68,'#080f1de8');shade.addColorStop(1,'#080f1d');ctx.fillStyle=shade;ctx.fillRect(0,0,width,height);
@@ -159,11 +170,12 @@ function paintNebula(t){
 }
 let planetTexture=null,planetTextureKey='';
 function makePlanetTexture(){
- const textureKey=[has('ocean'),has('microbes'),has('biosphere'),artRevision].join(':');if(planetTextureKey===textureKey&&planetTexture)return planetTexture;
+ const textureKey=[has('ocean'),has('microbes'),has('biofilm'),has('biosphere'),artRevision].join(':');if(planetTextureKey===textureKey&&planetTexture)return planetTexture;
  const c=document.createElement('canvas');c.width=1024;c.height=512;const g=c.getContext('2d');
  const source=has('ocean')?artwork.earth:artwork.rocky;
  if(ready(source)){g.drawImage(source,0,0,c.width,c.height);
   if(has('ocean')&&!has('microbes')){const im=g.getImageData(0,0,c.width,c.height);for(let k=0;k<im.data.length;k+=4){const r=im.data[k],green=im.data[k+1],b=im.data[k+2];if(green>b*1.12&&r>b*.85){im.data[k]=Math.min(255,r*1.2+20);im.data[k+1]=green*.8;im.data[k+2]=b*.8;}}g.putImageData(im,0,0);}
+ if(has('ocean')&&(has('microbes')||has('biofilm'))){const im=g.getImageData(0,0,c.width,c.height);for(let k=0;k<im.data.length;k+=4){const red=im.data[k],green=im.data[k+1],blue=im.data[k+2];if(red>blue*.78&&green>red*.92&&green>45){im.data[k]=red*.84;im.data[k+1]=Math.min(255,green*1.12);im.data[k+2]=blue*.9;}}g.putImageData(im,0,0);}
  }else{g.fillStyle=has('ocean')?'#18506c':'#936753';g.fillRect(0,0,c.width,c.height);}
  planetTextureKey=textureKey;planetTexture=c;return c;
 }
@@ -175,10 +187,18 @@ function projection(size){
  out.push({k:(y*size+x)*4,u:(Math.atan2(nx,nz)/(Math.PI*2)+.5)*1024,v:clamp(Math.floor((Math.asin(ny)/Math.PI+.5)*512),0,511),light:.12+light*.92,edge:Math.min(1,nz*14),shine:Math.pow(Math.max(0,nx*-.38+ny*-.38+nz*.84),45)});}
  projections.set(size,out);return out;
 }
+let nativeClouds=null;
+function cloudPixels(){
+ if(nativeClouds)return nativeClouds;const data=new Uint8Array(1024*512*4);
+ for(let y=0;y<512;y++)for(let x=0;x<1024;x++){const u=x/1024*Math.PI*2,v=y/512*Math.PI;
+ const n=Math.sin(u*5+Math.sin(v*8))*Math.cos(v*5)+.4*Math.sin(u*13-v*7)+.2*Math.cos(u*29+v*19);
+ const c=clamp((n-.4)*190,0,255);data[(y*1024+x)*4]=c;
+ }return nativeClouds=data;
+}
 function sphere(image,t,size,clouds=false,emissive=false){
  const key=[size,clouds,emissive].join(':'),cached=sphereFrames.get(key),now=performance.now();
  if(cached&&cached.image===image&&cached.revision===artRevision&&now-cached.time<65)return cached.canvas;
- const frame=cached?.canvas||document.createElement('canvas');frame.width=size;frame.height=size;const g=frame.getContext('2d'),im=g.createImageData(size,size),map=imagePixels(image),cloud=clouds&&ready(artwork.clouds)?imagePixels(artwork.clouds):null;
+ const frame=cached?.canvas||document.createElement('canvas');frame.width=size;frame.height=size;const g=frame.getContext('2d'),im=g.createImageData(size,size),map=imagePixels(image),cloud=clouds?cloudPixels():null;
  const offset=Math.floor(t*16)%1024;
  for(const p of projection(size)){const u=(Math.floor(p.u)+offset+1024)%1024,source=(p.v*1024+u)*4;let alpha=0,cloudSource=0;
   if(cloud){cloudSource=(p.v*1024+(u+Math.floor(t*4)+1024)%1024)*4;alpha=Math.max(0,(cloud[cloudSource]-75)/180)*.65;}
@@ -203,6 +223,15 @@ function drawEmber(x,y,r,t,stellar=false){
  ctx.save();ctx.globalCompositeOperation='screen';
  const streak=ctx.createLinearGradient(x-r*3,y,x+r*3,y);streak.addColorStop(0,'transparent');streak.addColorStop(.5,stellar?'#ffe9bfaa':'#ffe7bd66');streak.addColorStop(1,'transparent');ctx.fillStyle=streak;ctx.fillRect(x-r*3,y-1,r*6,2);ctx.restore();
 }
+let seedArt=null;
+function drawSeed(x,y,r,t){
+ glow(x,y,r*.95,'#f7d8a433','#c2905716');
+ if(ready(artwork.sun)){
+ if(!seedArt){seedArt=document.createElement('canvas');seedArt.width=400;seedArt.height=400;const c=seedArt.getContext('2d');c.drawImage(artwork.sun,0,0,400,400);c.globalCompositeOperation='destination-in';const m=c.createRadialGradient(200,200,0,200,200,200);m.addColorStop(0,'#ffffffdd');m.addColorStop(.3,'#ffffff99');m.addColorStop(.7,'#ffffff22');m.addColorStop(1,'#ffffff00');c.fillStyle=m;c.fillRect(0,0,400,400);}
+ ctx.save();ctx.translate(x,y);ctx.rotate(-.25+Math.sin(t*.3)*.04);ctx.globalCompositeOperation='screen';ctx.drawImage(seedArt,-r*.8,-r*.30,r*1.6,r*.60);ctx.restore();
+ }
+ glow(x,y,r*.25,'#fff2d299','#ffcf6d11');
+}
 let nursery=null;
 function drawNursery(x,y,r,t){
  if(ready(artwork.nebula)){
@@ -221,7 +250,7 @@ function draw(now){
  if(view==='planet'&&has('planet'))drawPlanet(cx,cy,r,t);
  else if(has('star')){drawEmber(cx,cy,r*.65,t,true);if(has('planet'))drawPlanet(cx-r*1.3,cy+r*.45,r*.2,t,true);}
  else if(has('bang'))drawNursery(cx,cy,r,t);
- else drawEmber(cx,cy,r*.42*(1+Math.sin(t*2)*.025),t);
+ else drawSeed(cx,cy,r,t);
  drawWorldPulse(cx,cy,r,now);
 }
 let last=0;function animate(time){if(!state.reduced&&!document.hidden&&time-last>32){draw(time);last=time;}requestAnimationFrame(animate);}save();render();requestAnimationFrame(animate);

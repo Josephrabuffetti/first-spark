@@ -1,0 +1,7 @@
+{
+  "name": "first-spark",
+  "version": "1.0.0",
+  "private": true,
+  "description": "A browser alchemy game from the first spark to a living ocean.",
+  "scripts": { "start": "node server.cjs", "test": "node test.cjs" }
+}

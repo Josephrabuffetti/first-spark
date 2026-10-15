@@ -1,0 +1,47 @@
+/* Recipe abstractions are game mechanics, not laboratory instructions. */
+const ITEMS = [
+['energy','Energy','ϟ','Cosmos','Established science','Energy can be transferred and transformed. It is one of our starting ingredients, not a material substance.'],
+['possibility','Possibility','✧','Cosmos','Imagined possibility','A poetic starting ingredient: the possibility that something could exist.'],
+['space','Space','⌘','Cosmos','Established science','Space and time form spacetime. Here, space is a reusable ingredient for cosmic recipes.'],
+['gravity','Gravity','◎','Cosmos','Established science','Gravity draws matter together and shapes planets, stars, and galaxies.'],
+['bang','First spark','✺','Cosmos','Imagined possibility','Our opening symbolizes the Big Bang. Science describes an early hot, dense expanding universe; its ultimate cause is unknown.'],
+['expansion','Expansion','⤢','Cosmos','Established science','The universe expands. This recipe represents that history, rather than explaining what caused it.'],
+['particles','Particles','⁙','Cosmos','Established science','The early universe contained particles interacting at extremely high energies.'],
+['cooling','Cooling','❄','Cosmos','Established science','As the universe expanded it cooled, allowing new structures to form over time.'],
+['hydrogen','Hydrogen','H','Cosmos','Established science','Hydrogen is the most abundant element. Neutral atoms formed when nuclei could capture electrons as the universe cooled.'],
+['helium','Helium','He','Cosmos','Established science','Much of the universe’s helium nuclei formed early. This recipe compresses early nucleosynthesis and later atom formation.'],
+['cloud','Gas cloud','☁','Cosmos','Established science','Gas gathers into clouds. Gravity can make sufficiently dense regions collapse.'],
+['protostar','Protostar','◌','Cosmos','Established science','A collapsing cloud becomes denser and hotter, building a protostar before sustained hydrogen fusion begins.'],
+['star','Star','☀','Cosmos','Established science','A star shines through nuclear fusion in its core. This game’s energy ingredient stands in for the conditions needed to ignite fusion.'],
+['fusion','Fusion','⊕','Cosmos','Established science','Fusion joins light nuclei into heavier ones under suitable conditions and can release energy.'],
+['carbon','Carbon','C','Cosmos','Established science','Stars can make carbon from helium nuclei. Carbon’s bonding properties make it central to life on Earth.'],
+['oxygen','Oxygen','O','Cosmos','Established science','Stars produce oxygen through nuclear reactions, including helium capture by carbon nuclei. The game compresses these steps.'],
+['supernova','Supernova','✹','Cosmos','Established science','Some stars end in powerful explosions that disperse elements. Not every star becomes a supernova.'],
+['dust','Stardust','⁛','Cosmos','Established science','Ejected stellar material can cool and form dust grains. Dust carries elements into later generations of planetary systems.'],
+['disk','Planetary disk','⊚','World','Established science','Young stars can be surrounded by disks of gas and dust. Rotation and gravity shape these systems.'],
+['rock','Rock','◆','World','Established science','Mineral grains can aggregate into larger solid bodies in a planet-forming disk.'],
+['planet','Rocky planet','◉','World','Established science','Rocky planets grow as material accumulates and collides. Our recipe compresses a long process.'],
+['heat','Geothermal heat','♨','World','Established science','Internal heat comes from formation and radioactive decay, among other sources. A young rocky world may be very hot.'],
+['volcano','Volcano','▲','World','Established science','Volcanism transports molten material and gases from a planet’s interior to its surface.'],
+['atmosphere','Atmosphere','≋','World','Established science','Volcanic outgassing can contribute gases to an atmosphere. Retention also depends on a planet’s gravity, temperature, and environment.'],
+['water','Water','◇','World','Established science','Water molecules contain hydrogen and oxygen. This recipe omits reaction conditions and intermediate chemistry.'],
+['ocean','Ocean','≈','World','Established science','Water can collect as oceans when surface conditions permit stable liquid water.'],
+['minerals','Minerals','⬡','World','Established science','Water interacting with rocks can dissolve and transport minerals and ions.'],
+['vent','Hydrothermal vent','♧','World','Established science','Seawater heated within rock can emerge as mineral-rich hydrothermal fluid.'],
+['light','Sunlight','☼','World','Established science','Starlight reaching a planet is an energy source. The right amount helps create conditions suitable for life.'],
+['organics','Organic molecules','⌬','Life','Established science','Organic molecules contain carbon and can form without life. Our recipe represents a broad range of chemistry.'],
+['chemistry','Prebiotic chemistry','⚗','Life','Open question','Scientists investigate how nonliving chemistry could give rise to life. Hydrothermal settings are one of several proposed environments.'],
+['lipids','Membrane molecules','◍','Life','Open question','Some amphiphilic molecules can assemble into membrane-like structures in water. Their role in life’s origins remains under study.'],
+['vesicle','Vesicle','◯','Life','Established science','Certain molecules spontaneously assemble into tiny compartments in water. Compartments alone are not alive.'],
+['replication','Replication','⧉','Life','Open question','How early molecular systems began copying information and evolving is an active area of research.'],
+['protocell','Protocell','⊙','Life','Open question','Protocells are models of compartments with some life-like properties. No single complete historical pathway to the first cell is known.'],
+['cell','First cell','⦿','Life','Open question','The origin of the first living cells is unresolved. This discovery symbolizes that transition rather than prescribing a proven recipe.'],
+['microbes','Microbial colony','∴','Life','Established science','Microorganisms can reproduce and form colonies under suitable conditions. Real cells require energy and resources.'],
+['photosynthesis','Photosynthesis','✳','Life','Established science','Photosynthesis captures light energy. Its evolution was complex, and not all photosynthetic organisms release oxygen.'],
+['cyanobacteria','Cyanobacteria','❋','Life','Established science','Cyanobacteria perform oxygen-producing photosynthesis. Their ancestors helped transform Earth’s atmosphere.'],
+['biosphere','Living ocean','❈','Life','Imagined possibility','Your chapter-ending microbial ecosystem. This is a creative milestone representing many interacting organisms and environmental cycles.']
+].map(([id,name,glyph,category,science,note])=>({id,name,glyph,category,science,note}));
+const RECIPES = [
+['energy','possibility','bang'],['bang','space','expansion'],['bang','energy','particles'],['expansion','space','cooling'],['particles','cooling','hydrogen'],['hydrogen','particles','helium'],['hydrogen','gravity','cloud'],['cloud','gravity','protostar'],['protostar','energy','star'],['star','hydrogen','fusion'],['fusion','helium','carbon'],['carbon','fusion','oxygen'],['star','fusion','supernova'],['supernova','cooling','dust'],['dust','gravity','disk'],['dust','dust','rock'],['rock','disk','planet'],['planet','energy','heat'],['rock','heat','volcano'],['volcano','planet','atmosphere'],['hydrogen','oxygen','water'],['water','planet','ocean'],['water','rock','minerals'],['ocean','heat','vent'],['star','planet','light'],['carbon','water','organics'],['organics','vent','chemistry'],['chemistry','minerals','lipids'],['lipids','water','vesicle'],['chemistry','energy','replication'],['vesicle','replication','protocell'],['protocell','vent','cell'],['cell','cell','microbes'],['microbes','light','photosynthesis'],['photosynthesis','microbes','cyanobacteria'],['cyanobacteria','ocean','biosphere']
+];
+if(typeof module!=='undefined')module.exports={ITEMS,RECIPES};

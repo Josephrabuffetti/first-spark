@@ -4,13 +4,15 @@ A cozy browser discovery game. Combine ingredients to move from a fictional cosm
 
 Play online: https://josephrabuffetti.github.io/first-spark/
 
-## World explorer and motion upgrade (v3)
+## Illustrated universe and visible zoom (v4)
 
-After creating a rocky planet, choose **Explore world**. Zoom from 100% to 350% with the buttons, mouse wheel, or + / − keys; drag the globe to pan. **Reset view** (or 0) returns to the overview, and Escape or **Back to creating** returns to the creation field. The creations strip shows only unlocked world features and opens their science notes. Camera position is temporary; existing v1 saves remain compatible.
+The observatory now uses locally hosted nebula art by Rawdanitsu (CC0) and Sun, Mars, Earth, and cloud textures by Solar System Scope / INOVE (CC BY 4.0). See [ASSET_CREDITS.md](ASSET_CREDITS.md) and **How to play → Artwork & credits**. No AI-generated assets are used.
 
-New discoveries send a ripple through the scene, and planet surfaces blend over 1.8 seconds as oceans and microbial life appear. Volcanoes, ocean ripples, vent bubbles, and microbial shimmer add visible surface detail. The creation field charges during merges, ingredients ease into their slots, and discovery symbols bloom into view. Reduced motion keeps discoveries and camera controls immediate. A custom SVG spark-and-orbit icon serves as both the brand mark and favicon.
+The opening and early universe have textured cosmic artwork in place of geometric spirals. Planets use spherical texture projection, moving cloud cover, atmospheric scattering, and directional lighting. Earth and Mars imagery illustrates fictional developmental stages; it is not a reconstruction of early Earth.
 
-Validation: `npm test` and `node --check game.js` pass. A separate DOM interaction run exercised all 36 recipes, completion, saved progress, explorer entry/exit, zoom limits, feature selection, and reduced-motion drawing. Browser screenshot and real canvas rendering checks were unavailable in the implementation environment because Chromium downloads failed; these still need visual review on desktop and mobile.
+**Zoom − / + and Reset are available from the first screen**, in every scene. **Focus view** hides the creation field for a closer look; drag to pan or scroll to zoom. Escape returns to creating. Once a planet exists, **Explore your planet** opens the world explorer and discovery notes. Existing v1 saves still load.
+
+Validation: recipe graph, JavaScript syntax, all 36 combinations through actual Chromium controls, completion, save reload, zoom before any discovery, Focus/Escape, planet exploration, pan, reduced motion, and mobile horizontal overflow. Desktop and mobile screenshots inspected in Chromium.
 
 ## Previous visual and interaction upgrade (v2)
 
@@ -35,11 +37,13 @@ Click two ingredient cards and choose **Merge**, or drag one ingredient onto ano
 
 `npm test` checks the discovery graph for completeness, unique recipes, and journal metadata. `node --check game.js` checks the main script syntax.
 
-`data.js` contains the ingredients and recipe graph. `game.js` contains pointer interactions, persistence, animations, and canvas art. `style.css` contains base styling and `experience.css` the v2 visual design. No packages or build tools are needed. Google Fonts is optional; system fonts work offline. All illustrations and sounds are generated locally.
+`data.js` contains the ingredients and recipe graph. `game.js` contains pointer interactions, persistence, animations, and canvas art. `style.css` contains base styling and `experience.css` the v2 visual design. No packages or build tools are needed. Google Fonts is optional; system fonts work offline. Artwork is served locally; sounds are synthesized locally.
+
+For browser checks, run `npm install`, `npx playwright install chromium`, then `npm run test:browser`. Set `CHROMIUM_PATH` to use an existing Chromium executable; optional `SCREENSHOT_DIR` controls where the six review screenshots go. The game itself still needs no dependencies or build step.
 
 ## Hosting later
 
-The static files are hosted on GitHub Pages from `main`. Publish `index.html`, `style.css`, `experience.css`, `data.js`, `game.js`, and `icon.svg` together at the same path. The Node server is only a local convenience. No backend or API keys are needed. Repository: https://github.com/Josephrabuffetti/first-spark
+The static files are hosted on GitHub Pages from `main`. Publish `index.html`, `style.css`, `experience.css`, `data.js`, `game.js`, and `icon.svg`, and `assets/` together at the same path. The Node server is only a local convenience. No backend or API keys are needed. Repository: https://github.com/Josephrabuffetti/first-spark
 
 Progress is stored per browser and origin. Export progress before switching from a local file to localhost or a hosted version. Science recipes are simplified game abstractions, not a simulation of cosmic evolution or a proven origin-of-life pathway.
 
